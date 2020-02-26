@@ -94,7 +94,7 @@ and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false);;
   |		inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = False
   |
   | REALISATION |
-  | Algorithme: Utilisation de la recurtion, du pattern matching, et de connecteur logique << ou >> ||.
+  | Algorithme: Utilisation de la recurtion, du pattern matching, et de connecteur logique << et >> &&.
   | Equations:
   | 	(1) V  -> true  (* Si ens1 est vide, alors il est inclus dans ens2 *)
   |   	(2) A ((e, nbr), ensprime) -> (appartient e ens2) && (inclus ensprime ens2)
@@ -110,5 +110,26 @@ let rec inclus (ens1:'a multiensemble) (ens2:'a multiensemble) : bool =
 let _ = assert(inclus (A((3,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = true)
 and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = false);;
 
+
+(**
+  | SPECIFICATION | ajout
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (ajout ens1 ens2) ajoute ens1 dans ens2.
+  | Examples:
+  | 	ajout (A((1,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2), V),A((3,2), A((4,1), A((6,3), V)))) 
+  | REALISATION |
+  | Algorithme: Utilisation de la recurtion, du pattern matching, et de connecteur logique << ou >> ||.
+  | Equations:
+  | 	(1) V  -> true  (* Si ens1 est vide, alors il est inclus dans ens2 *)
+  |   	(2) A ((e, nbr), ensprime) -> (appartient e ens2) && (inclus ensprime ens2)
+  | Implémentation:
+**)
+
+let ajout (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
+	let nbr = nbocc elt ens in
+		if appartient A((elt,nbr), ens) ens then ens else A((elt,nbr),ens)
+;;
+
+let _ = assert(ajout(A((1,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2), V),A((3,2), A((4,1), A((6,3), V)))));;
 
 
