@@ -77,12 +77,12 @@ let _ = assert(nbocc 6 (A((3,2), A((4,1), A((6,3), V)))) = 3);;
 
 let rec appartient (elt: 'a) (ens:'a multiensemble) : bool =
   match ens with
-  | V -> False
+  | V -> false
   | A ((e, nbr), ensprime) -> (e = elt) || (appartient elt ensprime)
 ;;
 
-let _ = assert(nbocc 6 (A((3,2), A((4,1), A((6,3), V)))) = True)
-and _ = assert(nbocc 9 (A((3,2), A((4,1), A((6,3), V)))) = False);;
+let _ = assert(appartient 6 (A((3,2), A((4,1), A((6,3), V)))) = true)
+and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false);;
 
 
 (**
@@ -101,14 +101,14 @@ and _ = assert(nbocc 9 (A((3,2), A((4,1), A((6,3), V)))) = False);;
   | Implémentation:
 **)
 
-let rec inclus (ens1:'a ensemble) (ens2:'a ensemble) : bool =
+let rec inclus (ens1:'a multiensemble) (ens2:'a multiensemble) : bool =
   match ens1 with
   | V -> true 
   | A ((e, nbr), ensprime) -> (appartient e ens2) && (inclus ensprime ens2)
 ;;
 
-let _ = assert(inclus (A((3,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = True)
-and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = False);;
+let _ = assert(inclus (A((3,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = true)
+and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = false);;
 
 
 
