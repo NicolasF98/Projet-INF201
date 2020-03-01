@@ -113,23 +113,51 @@ and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = false);;
 
 (**
   | SPECIFICATION | ajout
-  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
-  | Sémantique: (ajout ens1 ens2) ajoute ens1 dans ens2.
+  | Profil: 'a multielement -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (ajout elt ens) ajoute elt dans ens, en prenant en compte le principe de non-répétition du multi-ensemble.
   | Examples:
-  | 	ajout (A((1,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2), V),A((3,2), A((4,1), A((6,3), V)))) 
+  | 	ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2), A((4,1), A((6,3), V))))) 
   | REALISATION |
-  | Algorithme: Utilisation de la recurtion, du pattern matching, et de connecteur logique << ou >> ||.
+  | Algorithme: Utilisation du conditionnelle If...Then...Else.
   | Equations:
-  | 	(1) V  -> true  (* Si ens1 est vide, alors il est inclus dans ens2 *)
-  |   	(2) A ((e, nbr), ensprime) -> (appartient e ens2) && (inclus ensprime ens2)
+  | 	(1) Si l'elt est dans ens, alors on renvoit ens, sinon on l'ajoute
   | Implémentation:
 **)
 
+let elt_of (elt, _ : 'a multielement) : 'a = elt;;
+let occ_of (_, occ : 'a multielement) : int = occ;;
+
 let ajout (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
-	let nbr = nbocc elt ens in
-		if appartient A((elt,nbr), ens) ens then ens else A((elt,nbr),ens)
+	if (appartient (elt_of elt) ens) then ens else A(((elt_of elt),(occ_of elt)),ens)
 ;;
 
-let _ = assert(ajout(A((1,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2), V),A((3,2), A((4,1), A((6,3), V)))));;
+let _ = assert(ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2), A((4,1), A((6,3), V))))));;
+
+
+(**
+  | SPECIFICATION | supprime
+  | Profil: 'a multielement -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (supprime elt ens) supprime n occurence de elt de ens, si occ_of elt est égale à 0 et/ou elt_of elt n'est pas dans ens, alors on renvoie ens.
+  | Examples:
+  | 	supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((4,1), A((6,3), V)) 
+  |		supprime (3,0) (A((3,2), A((4,1), A((6,3), V)))) = A((3,2), A((4,1), A((6,3), V)))
+  | REALISATION |
+  | Algorithme: Utilisation du conditionnelle If...Then..Else, de la recurtion, et du pattern matching.
+  | Equations:
+  | 	(1) Si l'elt est dans ens, alors on renvoit ens, sinon on l'ajoute
+  | Implémentation:
+**)
+
+let elt_of (elt, _ : 'a multielement) : 'a = elt;;
+let occ_of (_, occ : 'a multielement) : int = occ;;
+
+let rec supprime (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
+	match ens with
+	| V -> V
+	| A ((e, o), ens) -> if (e = (elt_of elt)) then A((e, o - (occ_of elt)), ens) else A ((e, o), (supprime elt ens))
+;;
+
+let _ = assert(supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((3,0), A((4,1), A((6,3), V))));;
+
 
 
