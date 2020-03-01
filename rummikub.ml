@@ -10,6 +10,10 @@ type 'a multiensemble =
 |V											(* V pour Vide *)
 |A of 'a multielement * 'a multiensemble	(* A pour Ajout *)
 
+(* Implémentation des fonctions de manipulation d'un multiensemble *)
+
+let elt_of (elt, _ : 'a multielement) : 'a = elt;;		(* Donne la valeur de l'élément de notre multielement *)
+let occ_of (_, occ : 'a multielement) : int = occ;;		(* Donne le nombre d'occurence de l'élément de notre multielement *)
 
 (**
   | SPECIFICATION | cardinal
@@ -124,9 +128,6 @@ and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = false);;
   | Implémentation:
 **)
 
-let elt_of (elt, _ : 'a multielement) : 'a = elt;;
-let occ_of (_, occ : 'a multielement) : int = occ;;
-
 let ajout (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
 	if (appartient (elt_of elt) ens) then ens else A(((elt_of elt),(occ_of elt)),ens)
 ;;
@@ -147,9 +148,6 @@ let _ = assert(ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2),
   | 	(1) Si l'elt est dans ens, alors on renvoit ens, sinon on l'ajoute
   | Implémentation:
 **)
-
-let elt_of (elt, _ : 'a multielement) : 'a = elt;;
-let occ_of (_, occ : 'a multielement) : int = occ;;
 
 let rec supprime (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
 	match ens with
