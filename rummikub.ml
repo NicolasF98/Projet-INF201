@@ -108,7 +108,7 @@ and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false);;
 let rec inclus (ens1:'a multiensemble) (ens2:'a multiensemble) : bool =
   match ens1 with
   | V -> true 
-  | A ((e, nbr), ensprime) -> (appartient e ens2) && (inclus ensprime ens2)
+  | A ((e, nbr), ensprime) -> (appartient e ens2) && ((nbocc e ens2) = nbr) && (inclus ensprime ens2)
 ;;
 
 let _ = assert(inclus (A((3,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = true)
@@ -155,7 +155,54 @@ let rec supprime (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemb
 	| A ((e, o), ens) -> if (e = (elt_of elt)) then A((e, o - (occ_of elt)), ens) else A ((e, o), (supprime elt ens))
 ;;
 
-let _ = assert(supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((3,0), A((4,1), A((6,3), V))));;
+let _ = assert(supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((3,0), A((4,1), A((6,3), V))))
+and _ = assert(supprime (3,0) (A((3,2), A((4,1), A((6,3), V)))) = A((3,2), A((4,1), A((6,3), V))));;
+
+
+(**
+  | SPECIFICATION | egalité
+  | Profil: 'a multiensemble -> 'a multiensemble -> bool
+  | Sémantique: (egaux ens1 ens2) renvoie true si les deux ens ont les memes multielement, sinon false.
+  | Examples:
+  | 	egaux (A((3,2), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3), V)))) = true 
+  | 	egaux (A((3,7), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3), V)))) = false
+  | REALISATION |
+  | Algorithme: Utilisation du conditionnelle If...Then..Else, utilisation de la double inclusion.
+  | Equations:
+  | 	(1) Si ens1 est dans ens2, et si ens2 est dans ens1, alors true, sinon false.
+  | Implémentation:
+**)
+
+let rec egaux (ens1: 'a multiensemble) (ens2: 'a multiensemble) : bool =
+	if (inclus ens1 ens2) && (inclus ens2 ens1) then true else false
+;;
+
+let _ = assert(egaux (A((3,2), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3), V)))) = true)
+and _ = assert(egaux (A((3,7), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3), V)))) = false);;
+
+
+(**
+  | SPECIFICATION | intersection
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (intersection ens1 ens2) est le multiensemble des multielement qui appartient à la fois à ens1 et ens2.
+  | Examples:
+  |   (a) intersection A((1,2), A((2,2), A((3,2), V))) A((4,2), A((2,2), A((3,2), V))) = A((2,2), A((3,2), V))
+  |   (b) intersection A((1,2), A((2,2), A((3,2), V))) A((1,100), A((2,2), A((3,2), V))) = A((1,2), A((2,2), A((3,2), V)))
+  | REALISATION |
+  | Equations:
+  |   (1) intersectionE Ve ens2 = Ve
+  |   (2) intersectionE Ce (elt, ens) ens2 = Ce (elt, (intersectionE ens ens2))
+  |       où elt appartient à ens2
+  |   (3) intersectionE Ce (elt, ens) ens2 = (intersectionE ens ens2)
+  | Implémentation:
+**)
+
+let rec intersection (ens1:'a ensemble) (ens2:'a ensemble) : 'a ensemble =
+  match ens1 with
+  | V -> V 
+  | A ((e, occ), ens) -> if (appartient elt ens2) then A((elt, occ), intersection ens1 ens2)
+      else intersection ens1 ens2
+;;
 
 
 
