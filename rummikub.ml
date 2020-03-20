@@ -187,22 +187,34 @@ and _ = assert(egaux (A((3,7), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3
   | Sémantique: (intersection ens1 ens2) est le multiensemble des multielement qui appartient à la fois à ens1 et ens2.
   | Examples:
   |   (a) intersection A((1,2), A((2,2), A((3,2), V))) A((4,2), A((2,2), A((3,2), V))) = A((2,2), A((3,2), V))
-  |   (b) intersection A((1,2), A((2,2), A((3,2), V))) A((1,100), A((2,2), A((3,2), V))) = A((1,2), A((2,2), A((3,2), V)))
   | REALISATION |
-  | Equations:
-  |   (1) intersectionE Ve ens2 = Ve
-  |   (2) intersectionE Ce (elt, ens) ens2 = Ce (elt, (intersectionE ens ens2))
-  |       où elt appartient à ens2
-  |   (3) intersectionE Ce (elt, ens) ens2 = (intersectionE ens ens2)
   | Implémentation:
 **)
 
-let rec intersection (ens1:'a ensemble) (ens2:'a ensemble) : 'a ensemble =
+let rec intersection (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
   match ens1 with
-  | V -> V 
-  | A ((e, occ), ens) -> if (appartient elt ens2) then A((elt, occ), intersection ens1 ens2)
-      else intersection ens1 ens2
+  | V -> V
+  | A ((e,occ), ens) -> if (appartient e ens2) then A((e,occ), intersection ens ens2) else intersection ens ens2
 ;;
 
+let _ = assert(intersection (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A((3,2), V)))) = A((2,2), A((3,2), V)));;
 
 
+(**
+  | SPECIFICATION | difference
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (difference ens1 ens2) est le multiensemble des multielement qui appartient à ens1, mais pas à ens2.
+  | Examples:
+  |   (a) difference A((1,2), A((2,2), A((3,2), V))) A((4,2), A((2,2), A((3,2), V))) = A((1,2), A((4,2), V))
+  |   (b) difference A((1,2), A((2,2), A((3,2), V))) A((1,2), A((2,2), A((3,2), V))) = A(V)
+  | REALISATION |
+  | Implémentation:
+**)
+
+let rec difference (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
+  match ens1 with
+  | V -> V
+  | A ((e,occ), ens) -> if (appartient e ens2) == false then A((e,occ), difference ens ens2) else difference ens ens2
+;;
+
+let _ = assert(difference (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A((3,2), V)))) = A((1,2),V));;
