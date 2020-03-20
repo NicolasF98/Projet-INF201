@@ -23,7 +23,7 @@ UE INF201: Algorithmique et Programmation fonctionnelle.
 - [x] 1 - Créations des fonctions opérant sur les multi-ensembles.
 - [x] 2 - Implémentation des multi-ensembles sur un type somme.
 
-### Partie 4: graphisme avec Turtle
+### Partie 4: Réusinage
 
 - [ ] 1 - Réusinage de la partie 3.
 
