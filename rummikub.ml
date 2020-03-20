@@ -205,8 +205,7 @@ let _ = assert(intersection (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2),
   | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
   | Sémantique: (difference ens1 ens2) est le multiensemble des multielement qui appartient à ens1, mais pas à ens2.
   | Examples:
-  |   (a) difference A((1,2), A((2,2), A((3,2), V))) A((4,2), A((2,2), A((3,2), V))) = A((1,2), A((4,2), V))
-  |   (b) difference A((1,2), A((2,2), A((3,2), V))) A((1,2), A((2,2), A((3,2), V))) = A(V)
+  |   (a) difference A((1,2), A((2,2), A((3,2), V))) A((4,2), A((2,2), A((3,2), V))) = A((1,2), V)
   | REALISATION |
   | Implémentation:
 **)
