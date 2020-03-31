@@ -1,4 +1,5 @@
 (* FOURNOUT Nicolas INF-1 *)
+(* Je ne suis pas en binome *)
 
 
 (* Implémentation des notions de multielement *)
@@ -13,10 +14,12 @@ type 'a multiensemble =
 |V											(* V pour Vide *)
 |A of 'a multielement * 'a multiensemble	(* A pour Ajout *)
 
+
 (* Implémentation des fonctions de manipulation d'un multiensemble *)
 
 let elt_of (elt, _ : 'a multielement) : 'a = elt;;		(* Donne la valeur de l'élément de notre multielement *)
 let occ_of (_, occ : 'a multielement) : int = occ;;		(* Donne le nombre d'occurence de l'élément de notre multielement *)
+
 
 (**
   | SPECIFICATION | cardinal
@@ -223,6 +226,25 @@ let _ = assert(difference (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A
 
 
 (**
+  | SPECIFICATION | iem
+  | Profil: 'a multiensemble -> int -> 'a
+  | Sémantique: (iem ens i) renvoi un l'élément i de ens.
+  | Examples:
+  |   (a) (iem (A((1,2), A((13,2), A((30,2), V)))) 2) = 1 
+  | REALISATION |
+  | Implémentation:
+**)
+
+let rec iem (ens: 'a multiensemble) (i: int): 'a =
+	match ens with
+	| V -> 0
+	| A((e,occ),ensprime) -> if (occ >= i) then e else (iem ensprime (i-occ));;
+
+let _ = assert((iem (A((3,2), A((4,1), A((6,3), V)))) 2) = 3)
+and _ = assert((iem (A((3,2), A((4,1), A((6,3), V)))) 3) = 4);;
+
+
+(**
   | SPECIFICATION | un_dans
   | Profil: 'a multiensemble -> 'a
   | Sémantique: (und_dans ens) renvoi un élément aléatoire de ens, en prenant en compte la repetition (plus un elt et présent, plus il a de chance d'etre renvoyé).
@@ -232,7 +254,10 @@ let _ = assert(difference (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A
   | Implémentation:
 **)
 
+let un_dans(ens: 'a multiensemble): 'a=
+	((iem ens (Random.int((cardinal ens)+1))));;
 
+let _ = (un_dans(A((3,2), A((4,1), A((6,3), V)))));;
 
 
 
@@ -259,7 +284,7 @@ type 'a multiensemble = 'a multielement list;;
 let rec cardinalL (ens:'a multiensemble) : int=
   match ens with
   | [] -> 0
-  | (valu,occ)::fin -> (cardinalL fin) + occ (* cf. eq. 2 *)
+  | (valu,occ)::fin -> (cardinalL fin) + occ 
 ;;
 
 let _ = assert(cardinalL [ (2, 5); (1,2) ] = 7 )
@@ -372,14 +397,14 @@ and _ = assert(supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]);;
   |   (b) egauxL [] [] = True
   |   (c) egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = False
 *)
+
 let egauxL (ens1:'a multiensemble) (ens2: 'a multiensemble) : bool =
-  (inclusL ens1 ens2) && (inclusL ens2 ens1)
-;;
+  (inclusL ens1 ens2) && (inclusL ens2 ens1);;
 
 let _ = assert(egauxL [(1,1); (2,1)] [(2,1); (1,1)] = true)
 and _ = assert(egauxL [] [] = true)
-and _ = assert(egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = false)
-;;
+and _ = assert(egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = false);;
+
 
 (**
   | SPECIFICATION | intersectionL
@@ -401,14 +426,14 @@ let rec intersectionL (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multi
 let _ = assert(intersectionL [(1,1); (2,1); (3,1)] [(2,1); (3,1); (4,1)] = [(2,1); (3,1)])
 and _ = assert(intersectionL [(1,1); (2,1)] [(2,1); (1,1)] = [(1,1); (2,1)]);;
 
+
 (**
   | SPECIFICATION | differenceL
-  | Profil: 'a ensemble -> 'a ensemble -> 'a ensemble
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
   | Sémantique: (differenceL ens1 ens2) est l'ensemble des elements qui appartiennent à ens1 mais pas à ens2
   | Examples:
-  |   (a) differenceL [(2,1); (1,1)] [(1,1)] = [(2,1)]
-  |   (c) differenceL [('a',1)] [('b',1)] = [('a',1)]
-*)
+  |   (a) differenceL [(2,1); (1,1)] [(1,1)] = [(2,1); (1,0)]
+**)
 
 let rec differenceL (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
   match ens2 with
@@ -416,6 +441,257 @@ let rec differenceL (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multien
   | (valu,occ)::fin -> differenceL (supprimeL (valu,occ) ens1) fin
 ;;
 
-let _ = assert(differenceL [(2,1); (1,1)] [(1,1)] = [(2,1)])
-and _ = assert(differenceL [('a',1)] [('b',1)] = [('a',1)]);;
+let _ = assert(differenceL [(2,1); (1,1)] [(1,1)] = [(2,1); (1,0)])
+
+
+(**
+  | SPECIFICATION | iemL
+  | Profil: 'a multiensemble -> int -> 'a
+  | Sémantique: (iem ens i) renvoi un l'élément i de ens.
+  | Examples:
+  |   (a) (iem (A((1,2), A((13,2), A((30,2), V)))) 2) = 1 
+  | REALISATION |
+  | Implémentation:
+**)
+
+let rec iemL (ens: 'a multiensemble) (i: int): 'a =
+	match ens with
+	| [] -> 0
+	| (e,occ)::ensprime -> if (occ >= i) then e else (iemL ensprime (i-occ));;
+
+let _ = assert((iemL [(3,2); (4,1); (6,3)] 2) = 3)
+and _ = assert((iemL [(3,2); (4,1); (6,3)] 3) = 4);;
+
+
+(**
+  | SPECIFICATION | un_dansL
+  | Profil: 'a multiensemble -> 'a
+  | Sémantique: (und_dans ens) renvoi un élément aléatoire de ens, en prenant en compte la repetition (plus un elt et présent, plus il a de chance d'etre renvoyé).
+  | Examples:
+  |   (a) un_dansL [(3,2); (4,1); (6,3)]  
+  | REALISATION |
+  | Implémentation:
+**)
+
+let un_dansL(ens: 'a multiensemble): 'a=
+	((iemL ens (Random.int((cardinalL ens)+1))));;
+
+let _ = (un_dansL [(3,2); (4,1); (6,3)]);;
+
+
+
+
+(* Q3 : Réusinage des fonctions avec l'ordre supérieur *)
+
+(* PS: Pour différencer les fonctions reusiné, le suffixe 0 serra ajouté à chaque nom de fonction *)
+
+
+(* Redefinition du type multiensemble *)
+
+type 'a multiensemble = 'a multielement list;;
+
+
+(**
+  | SPECIFICATION | cardinalO
+  | Profil: 'a multielement list -> int
+  | Sémantique: (cardinalL ens) est le nombre d'elements de ens.
+  | Examples:
+  |   (a) cardinalO [ (2, 5) ;(3, 1) ] = 6
+  |   (b) cardinal0 [ (10, 3) ] = 3
+  |   (c) cardinal0 [ (true, 2); (false, 2) ] = 4
+*)
+
+(*let rec cardinalO (ens:'a multiensemble) : int=
+	match ens with
+	| [] -> 0
+	| (valu,occ)::fin -> cardinalO fin + List.rev(List.hd(valu,occ))
+;;
+
+let _ = assert(cardinalO [ (2, 5); (1,2) ] = 7 )
+and _ = assert(cardinalO [ (102, 1) ] = 1)
+and _ = assert(cardinalO [ (true,1) ; (false,2) ] = 3);;
+*)
+
+(**
+  | SPECIFICATION | nombre d'occurrences
+  | Profil: 'a -> 'a multiensemble -> int
+  | Sémantique: (nboccL elt ens) nombre d'occurrence de elt dans ens.
+  | Examples:
+  | 	(a) nboccL 6 [ (2,1); (6,3) ] = 3
+**)
+
+(*let nboccO (elt: 'a) (ens:'a multiensemble) : int =
+	List.fold_left  elt ens
+;;
+
+let _ = assert(nboccO 2 [(2,1); (3,2); (10,1)] = 1)
+and _ = assert(nboccL 4 [(2,1); (3,1); (4,0)] = 0);;
+
+*)
+(**
+  | SPECIFICATION | appartientL
+  | Profil: 'a -> 'a multiensemble -> bool
+  | Sémantique: (appartientL elt ens) est vrai si et seulement si elt appartient à ens
+  | Examples:
+  |   (a) appartientL 2 [(2,1); (3,2); (10,1)] = true
+  |   (b) appartientL 4 [(2,1); (3,1); (4,0)] = false
+*)
+
+(*let rec appartientL (elt:'a) (ens:'a multiensemble) : bool =
+  match ens with
+  | [] -> false
+  | (valu,occ)::fin -> ((valu == elt) && (occ != 0)) || (appartientL elt fin)
+;;
+
+let _ = assert(appartientL 2 [(2,1); (3,2); (10,1)] = true)
+and _ = assert(appartientL 4 [(2,1); (3,1); (4,0)] = false);;
+*)
+
+(**
+  | SPECIFICATION | inclusL
+  | Profil: 'a multiensemble -> 'a multiensemble -> bool
+  | Sémantique: (inclusL ens1 ens2) est vrai si et seulement si ens1 est inclus dans ens2
+  | Examples:
+  |   (a) inclusL [(1,2); (2,3); (3,3)] [(0,1); (1,2); (2,3); (3,3)] = true
+  |   (b) inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false
+ *)
+(*
+let rec inclusL (ens1:'a multiensemble) (ens2:'a multiensemble) : bool=
+  match ens1 with
+  | [] -> true (* eq. 1 *)
+  | (valu,occ)::fin -> (appartientL valu ens2) && (inclusL fin ens2)
+;;
+
+let _ = assert(inclusL [(1,2); (2,3); (3,3)] [(0,1); (1,2); (2,3); (3,3)] = true)
+and _ = assert(inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false);;
+*)
+
+(**
+  | SPECIFICATION | ajouteL
+  | Profil: 'a multielement -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (ajouteL elt ens) est l'ensemble obtenu en ajoutant l'élément elt à l'ensemble ens en respectant la contrainte 
+                de non répétition des éléments.
+  | Examples:
+  |   (a) ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)] 
+  |   (b) ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]
+*)
+
+let ajouteO (elt:'a multielement) (ens: 'a multiensemble): 'a multiensemble =
+	List.append ens elt
+;;
+
+let _ = assert(ajouteO (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)])
+and _ = assert(ajouteO (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]);;
+
+
+(**
+  | SPECIFICATION | supprimeL
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (supprimeL elt ens) supprime l'élément elt de l'ensemble ens.
+  | Examples:
+  |   (a) supprimeL (3,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,2)]
+  |   (c) supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]
+*)
+
+let rec supprimeL (elt:'a multielement) (ens: 'a multiensemble): 'a multiensemble =
+  match ens with
+  | [] -> []
+  | (valu, occ)::fin ->
+      if (valu = (elt_of elt)) then (valu,occ - occ_of elt)::fin
+      else (valu,occ)::(supprimeL elt fin)
+;;
+
+let _ = assert(supprimeL ('a',1) [('a',1); ('b',1)] = [('a',0);('b',1)])
+and _ = assert(supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]);;
+
+
+(**
+  | SPECIFICATION | egauxL
+  | Profil: 'a mutliensemble -> 'a multiensemble -> bool
+  | Sémantique: (egauxL ens1 ens2) est vrai si et seulement si ens1 et ens2 ont les mêmes éléments.
+  | Examples:
+  |   (a) egauxL [(1,1); (2,1)] [(2,1); (1,1)] = True
+  |   (b) egauxL [] [] = True
+  |   (c) egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = False
+*)
+
+let egauxL (ens1:'a multiensemble) (ens2: 'a multiensemble) : bool =
+  (inclusL ens1 ens2) && (inclusL ens2 ens1);;
+
+let _ = assert(egauxL [(1,1); (2,1)] [(2,1); (1,1)] = true)
+and _ = assert(egauxL [] [] = true)
+and _ = assert(egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = false);;
+
+
+(**
+  | SPECIFICATION | intersectionL
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (intersectionL ens1 ens2) est l'ensemble qui appartient à la fois à ens1 et ens2.
+  | Examples:
+  |   (a) intersectionL [(1,1); (2,1); (3,1)] [(2,1); (3,1); (4,1)] = [(2,1); (3,1)]
+  |   (c) intersectionL [(1,1); (2,1)] [(2,1); (1,1)] = [(1,1); (2,1)]
+**)
+
+let rec intersectionL (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
+  match ens1 with
+  | [] -> [] 
+  | (valu,occ)::fin ->
+      if (appartientL valu ens2) then (valu,occ)::(intersectionL fin ens2)
+      else intersectionL fin ens2
+;;
+
+let _ = assert(intersectionL [(1,1); (2,1); (3,1)] [(2,1); (3,1); (4,1)] = [(2,1); (3,1)])
+and _ = assert(intersectionL [(1,1); (2,1)] [(2,1); (1,1)] = [(1,1); (2,1)]);;
+
+
+(**
+  | SPECIFICATION | differenceL
+  | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
+  | Sémantique: (differenceL ens1 ens2) est l'ensemble des elements qui appartiennent à ens1 mais pas à ens2
+  | Examples:
+  |   (a) differenceL [(2,1); (1,1)] [(1,1)] = [(2,1); (1,0)]
+**)
+
+let rec differenceL (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
+  match ens2 with
+  | [] -> ens1
+  | (valu,occ)::fin -> differenceL (supprimeL (valu,occ) ens1) fin
+;;
+
+let _ = assert(differenceL [(2,1); (1,1)] [(1,1)] = [(2,1); (1,0)])
+
+
+(**
+  | SPECIFICATION | iemL
+  | Profil: 'a multiensemble -> int -> 'a
+  | Sémantique: (iem ens i) renvoi un l'élément i de ens.
+  | Examples:
+  |   (a) (iem (A((1,2), A((13,2), A((30,2), V)))) 2) = 1 
+  | REALISATION |
+  | Implémentation:
+**)
+
+let rec iemL (ens: 'a multiensemble) (i: int): 'a =
+	match ens with
+	| [] -> 0
+	| (e,occ)::ensprime -> if (occ >= i) then e else (iemL ensprime (i-occ));;
+
+let _ = assert((iemL [(3,2); (4,1); (6,3)] 2) = 3)
+and _ = assert((iemL [(3,2); (4,1); (6,3)] 3) = 4);;
+
+
+(**
+  | SPECIFICATION | un_dansL
+  | Profil: 'a multiensemble -> 'a
+  | Sémantique: (und_dans ens) renvoi un élément aléatoire de ens, en prenant en compte la repetition (plus un elt et présent, plus il a de chance d'etre renvoyé).
+  | Examples:
+  |   (a) un_dansL [(3,2); (4,1); (6,3)]  
+  | REALISATION |
+  | Implémentation:
+**)
+
+let un_dansL(ens: 'a multiensemble): 'a=
+	((iemL ens (Random.int((cardinalL ens)+1))));;
+
+let _ = (un_dansL [(3,2); (4,1); (6,3)]);;
 
