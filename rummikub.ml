@@ -695,3 +695,21 @@ let un_dansL(ens: 'a multiensemble): 'a=
 
 let _ = (un_dansL [(3,2); (4,1); (6,3)]);;
 
+
+(* Implementation des types couleur, valeur et de tuile *)
+
+type couleur = Bleu | Rouge | Jaune | Noir;;
+type valeur = int;; (* 1 à 13 *);;
+type tuile = Joker | T of valeur * couleur;;
+
+
+(* Implementation des types combinaison, table et pose *)
+
+type combinaison = tuile list;;
+type table = combinaison list;;
+type pose = table;;
+
+
+(* Implementation des types main et pioche *)
+
+
