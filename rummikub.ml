@@ -575,14 +575,14 @@ and _ = assert(inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false);;
   |   (a) ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)] 
   |   (b) ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]
 *)
-
+(*
 let ajouteO (elt:'a multielement) (ens: 'a multiensemble): 'a multiensemble =
 	List.append ens elt
 ;;
 
 let _ = assert(ajouteO (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)])
 and _ = assert(ajouteO (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]);;
-
+*)
 
 (**
   | SPECIFICATION | supprimeL
@@ -592,7 +592,7 @@ and _ = assert(ajouteO (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1
   |   (a) supprimeL (3,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,2)]
   |   (c) supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]
 *)
-
+(*
 let rec supprimeL (elt:'a multielement) (ens: 'a multiensemble): 'a multiensemble =
   match ens with
   | [] -> []
@@ -604,7 +604,7 @@ let rec supprimeL (elt:'a multielement) (ens: 'a multiensemble): 'a multiensembl
 let _ = assert(supprimeL ('a',1) [('a',1); ('b',1)] = [('a',0);('b',1)])
 and _ = assert(supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]);;
 
-
+*)
 (**
   | SPECIFICATION | egauxL
   | Profil: 'a mutliensemble -> 'a multiensemble -> bool
@@ -700,7 +700,9 @@ let _ = (un_dansL [(3,2); (4,1); (6,3)]);;
 
 type couleur = Bleu | Rouge | Jaune | Noir;;
 type valeur = int;; (* 1 à 13 *);;
-type tuile = Joker | T of valeur * couleur;;
+type tuile = 
+  | Joker
+  | T of (valeur * couleur);;
 
 
 (* Implementation des types combinaison, table et pose *)
@@ -712,4 +714,45 @@ type pose = table;;
 
 (* Implementation des types main et pioche *)
 
+type pioche = tuile multiensemble;;
+type main = pioche;;
 
+
+(**
+  | SPECIFICATION | en_ordre
+  | Profil: 'a multiensemble tuile -> 'a multiensemble tuile
+  | Sémantique: (en_ordre ens) renvoi le multiensemble rangé dans l'ordre
+  | Examples:
+  |   (a) en_ordre [ T(3,Noir), T(1,Noir), T(1,Rouge),(Joker,2) ] =  [ (Joker,2), T(1,Rouge), T(1,Noir), T(3,Noir) ]
+  | REALISATION |
+  | Implémentation:
+**)
+
+
+let cst_PIOCHE_INIT : pioche = [ (Joker,2) ;
+T(1,Rouge), 2 ; T(2,Rouge), 2 ; T(3,Rouge), 2 ; T(4,Rouge), 2 ; T(5,Rouge), 2 ; T(6,Rouge), 2 ; T(7,Rouge), 2 ; T(8,Rouge), 2 ; T(9,Rouge), 2 ; T(10,Rouge), 2 ; T(11,Rouge), 2 ; T(12,Rouge), 2 ; T(13,Rouge), 2 ;
+T(1,Bleu), 2 ; T(2,Bleu), 2 ; T(3,Bleu), 2 ; T(4,Bleu), 2 ; T(5,Bleu), 2 ; T(6,Bleu), 2 ; T(7,Bleu), 2 ; T(8,Bleu), 2 ; T(9,Bleu), 2 ; T(10,Bleu), 2 ; T(11,Bleu), 2 ; T(12,Bleu), 2 ; T(13,Bleu), 2 ;
+T(1,Jaune), 2 ; T(2,Jaune), 2 ; T(3,Jaune), 2 ; T(4,Jaune), 2 ; T(5,Jaune), 2 ; T(6,Jaune), 2 ; T(7,Jaune), 2 ; T(8,Jaune), 2 ; T(9,Jaune), 2 ; T(10,Jaune), 2 ; T(11,Jaune), 2 ; T(12,Jaune), 2 ; T(13,Jaune), 2 ;
+T(1,Noir), 2 ; T(2,Noir), 2 ; T(3,Noir), 2 ; T(4,Noir), 2 ; T(5,Noir), 2 ; T(6,Noir), 2 ; T(7,Noir), 2 ; T(8,Noir), 2 ; T(9,Noir), 2 ; T(10,Noir), 2 ; T(11,Noir), 2 ; T(12,Noir), 2 ; T(13,Noir), 2
+]
+
+let compare (t1:tuile) (t2:tuile) : combinaison =
+  if t1 = Joker then [t1;t2] else if t2 = Joker then [t2;t1] else
+  let T(nb1,val1) = t1 and T(nb2,val2) = t2 in
+  match val1 with
+  | Rouge -> if val2 != Rouge then [t1; t2] else if nb1<nb2 then [t1;t2] else [t2; t1]
+  | Bleu -> if val2 != Bleu then (if val2 != Rouge then [t1; t2] else [t2; t1]) else if nb1<nb2 then [t1;t2] else [t2; t1]
+  | Jaune -> if val2 != Jaune then (if val2 != Noir then [t2; t1] else [t1; t2]) else if nb1<nb2 then [t1;t2] else [t2; t1]
+  | Noir -> if val2 != Noir then [t2; t1] else if nb1<nb2 then [t1;t2] else [t2; t1]
+  ;;
+                
+let rec en_ordre (p:pioche) : pioche =
+  match p with
+  | [] -> []
+  | (x,y)::(z,a)::fin -> en_ordre(compare(x z)::fin)
+  ;;
+
+                
+let p1 : pioche = [ T(3,Rouge), 2 ;
+T(1,Rouge), 2 ; T(3,Rouge), 2; 
+T(1,Bleu), 2; (Joker,2); T(2,Bleu), 2]
