@@ -621,21 +621,17 @@ let rec differenceT(ens1:'a multiensemble2)(ens2:'a multiensemble2):'a multiense
         else (supprimeT (n,(nboccT n ens1)) (differenceT ens1 s));;
 
 
-(* Q4 --------------------------------------------------------------- *)
+(* Implémentation des types couleur, valeur, tuile, combinaison, table, pose, main, pioche *)
 type couleur = Bleu | Rouge | Jaune | Noir ;;
-type valeur = nat;; (* restreint de 1 à 13 *)
+type valeur = nat;; (* 1 à 13 *)
 type tuile = 
   |Joker
   |T of valeur * couleur;;
 
-
-(* Q5 --------------------------------------------------------------- *)
-type combinaison = tuile list;;
+  type combinaison = tuile list;;
 type table = combinaison list;;
 type pose = combinaison list;; 
 
-
-(* Q6 --------------------------------------------------------------- *)
 type main = tuile multiensemble2;;
 type pioche = tuile multiensemble2;;
 
@@ -655,24 +651,16 @@ let cst_PIOCHE_INIT : pioche =
     T(1,Noir), 2 ;  T(2,Noir), 2 ; T(3,Noir), 2 ;
     T(4,Noir), 2 ; T(5,Noir), 2 ; T(6,Noir), 2 ; T(7,Noir), 2 ;
     T(8,Noir), 2 ; T(9,Noir), 2 ; T(10,Noir), 2 ; T(11,Noir), 2 ;
-    T(12,Noir), 2 ; T(13,Noir), 2 ];;
-          
-let m1 : main = [(Joker,1) ; T(3,Rouge),1 ; T(2,Bleu),1 ;  T(2,Noir),1 ; T(6,Jaune), 1] 
-and m2 : main = [T(3,Rouge),1; T(1,Noir),2 ; T(2,Rouge),1 ;  T(1,Bleu),1]
-and m3 : main = [T(1,Noir),1; (Joker,2) ;  T(2,Rouge),1; T(3,Jaune),2]
-and m4 : main = [T(3,Rouge),1; T(1,Jaune),2 ; T(2,Bleu),1 ; (Joker,1)]
-and m5 : main = [T(3,Noir),1; T(1,Jaune),2 ; (Joker,1) ;  T(2,Bleu),1]
-and m6 : main = [T(3,Bleu),1; T(1,Jaune),2 ; (T(12,Bleu),1) ; (Joker,2); T(2,Bleu),1]
-and m11: main = [ T(3,Bleu),1; T(1,Jaune),2];;
+    T(12,Noir), 2 ; T(13,Noir), 2 ];;          
 
-(*Q7 --------------------------------------------------------------------- *)
 
-(* range_joker
-Profil : tuile multienselble2 -> tuile multiensemble2
-Sémantique : range_joker permet de placer les joker à la fin de la main 
-               pour la fct en_ordre 
-Ex : (range_joker m1) = [T(3,Rouge),1 ; T(2,Bleu),1 ;  T(2,Noir),1 ; T(6,Jaune), 1;(Joker,1)] 
-*)
+(**
+  | SPECIFICATION | en_ordre
+  | Profil: pioche -> pioche
+  | Sémantique: (en_ordre p) range dans l'ordre la pioche fourni en arguement
+  | Utilisation de 2 fonctions annexe, range_joker, range_couleur.
+**)
+
 let rec range_joker(n:tuile multiensemble2):tuile multiensemble2 = 
   match n with
   |[] -> []
@@ -681,12 +669,6 @@ let rec range_joker(n:tuile multiensemble2):tuile multiensemble2 =
 ;;  
 
 
-(* range_couleur :
-Profil :couleur -> main (ou pioche)-> main(ou pioche)
-  Sémantique : c représente la couleur d'une tuile, n la mian du joueur 
-  range_couleur permet de récupérer toutes les tuiles de couleur c
-  Ex : (range_couleur Bleu m1)= [(T (2, Bleu), 1)]
-*) 
 let rec range_couleur(c:couleur)(n:tuile multiensemble2):tuile multiensemble2 =
   match (range_joker n) with
   |[] -> []
@@ -701,18 +683,21 @@ let en_ordre (n:pioche):pioche =
   (range_joker(List.sort compare (range_couleur Noir n))) 
 ;;
 
+
+(* Implémenation des types joueur, statut, etat *)
+
 type joueur = J1 | J2;;
 type statut = joueur * bool * main;;
 type etat = (statut * statut) * table * pioche * joueur;; 
 
-(* Q8 --------------------------------------------------------------- *)
 
+(**
+  | SPECIFICATION | extraire
+  | Profil: nat -> pioche -> main*pioche
+  | Sémantique: (extraire n p) extrait n carte aléatoirement de la pioche p, et renvoi la main de n carte, et la pioche restante.
+  | Utilisation de 1 fonctions annexe, extraire_main.
+**)
 
-(*extraire_main 
-Profil : int -> pioche -> main 
-  Sémantique : créé la main du joueur de tuiles extraitent de la pioche 
-                              Sert à faciliter la fonction extraire
-*)
 let rec extraire_main(n:nat)(p:pioche):main= 
   match n with
   |0-> [] 
@@ -723,17 +708,128 @@ let extraire (n:nat)(p:pioche):main*pioche =
   let main=(extraire_main n p) in
   (main, (differenceT p main));; 
 
-(extraire 0 m1);;(extraire 1 m1);;(extraire 3 m1);;
+
+(**
+  | SPECIFICATION | distrib
+  | Profil: -> main*main*pioche
+  | Sémantique: (distrib()) génére depuis la pioche inital 1 main pour deux joueurs.
+**)  
 
 let distrib():main*main*pioche=
   let main1,pioche = (extraire 14 cst_PIOCHE_INIT) in
   let main2,nlle_p = (extraire 14 pioche) in
   (main1,main2,nlle_p);;
 
-(distrib());; 
-  
+
+(**
+  | SPECIFICATION | init_partie
+  | Profil: -> etat
+  | Sémantique: (init_partie()) défini un etat initiale après la distribution des cartes
+**) 
+
 let init_partie():etat=
   let (main1,main2,pioche)=(distrib ()) in 
   ((J1,false,main1),(J2,false,main2)),[],pioche,J1;;
 
-(init_partie());;
+
+(* Implémentation des fonctions d'accès *)
+
+let joueur_courant (e:etat): joueur =
+  let ((stat, stat1), table1, pioche1, jou) = e
+  in (jou);;
+
+  
+let joueur_suivant (e:etat): joueur =
+  let ((stat, stat1), table1, pioche1, jou) = e
+  in if jou == J1 then J2 else J1;;
+
+
+let la_table (e:etat):table=
+  let ((stat, stat1), table1, pioche1, jou) = e
+  in (table1);;
+
+
+let la_pioche (e:etat):pioche=
+  let ((stat, stat1), table1, pioche1, jou) = e
+  in (pioche1);;
+
+(*
+let la_main (j:joueur)(e:etat):main=
+  let ((stat, stat1), table1, pioche1, jou) = e
+  in [(stat, stat1)];;
+*)
+let p1:combinaison = [T(5,Noir);  T(5,Noir); T(5,Noir)];;
+let p2:combinaison = [T(12,Noir);  T(12,Bleu); T(12,Rouge)];;
+
+
+(**
+  | SPECIFICATION | est_suite
+  | Profil: combinaison -> bool
+  | Sémantique: (est_suite p) renvoi true si la combinaison est une suite valide, false si ce n'est pas le cas.
+**)
+
+let est_suite (c:combinaison):bool=
+  if List.length(c) < 3 then false else
+  let (T(nv,coul1)::T(nv2,coul2)::T(nv3,coul3)::autre) = c
+  in if (coul1==coul2 && coul2==coul3) &&(nv<=nv2 && nv2<=nv3) then true else false
+  ;;
+
+
+(**
+  | SPECIFICATION | est_groupe
+  | Profil: combinaison -> bool
+  | Sémantique: (est_groupe p) renvoi true si la combinaison est une groupe valide, false si ce n'est pas le cas.
+**)
+
+let est_groupe (c:combinaison):bool=
+  if List.length(c) < 3 then false else
+  let (T(nv,coul1)::T(nv2,coul2)::T(nv3,coul3)::autre) = c
+  in if (coul1!=coul2 && coul2!=coul3) &&(nv==nv2 && nv2==nv3) then true else false 
+  ;;
+
+
+(**
+  | SPECIFICATION | combinaison_valide
+  | Profil: combinaison -> bool
+  | Sémantique: (combinaison_valide p) renvoi true si la combinaison est un groupe ou une suite valide, false si ce n'est pas le cas.
+**)
+
+let combinaison_valide (c:combinaison):bool=
+  if ((est_suite c) == true) || ((est_groupe c) == true) then true else false
+  ;;
+
+
+(**
+  | SPECIFICATION | points
+  | Profil: combinaison -> int
+  | Sémantique: (points p) renvoi la valeur en point de la combinaison fournie en argument, si cette combinaison est vide elle vaut 0.
+**)
+
+let rec points(c:combinaison):int=
+  match c with
+  | [] -> 0
+  | Joker::autre -> (points autre) + 30
+  | T(valu,coul)::autre -> (points autre) + valu
+  ;;
+
+
+(**
+  | SPECIFICATION | points_suite
+  | Profil: combinaison -> int
+  | Sémantique: (points_suite p) renvoi la valeur en point de la combinaison fourni en argument,seulement si c'est une suite, sinon elle vaut 0.
+**)
+
+let points_suite (c:combinaison):int=
+  if (est_suite c == true) then points c else 0
+  ;;
+
+
+(**
+  | SPECIFICATION | points_groupe
+  | Profil: combinaison -> int
+  | Sémantique: (points_groupe p) renvoi la valeur en point de la combinaison fourni en argument,seulement si c'est un groupe, sinon elle vaut 0.
+**)
+
+let points_groupe (c:combinaison):int=
+  if (est_groupe c == true) then points c else 0
+    ;;
