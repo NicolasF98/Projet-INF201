@@ -63,7 +63,7 @@ let _ = assert(cardinal (A((3,2), A((4,1), A((6,3), V)))) = 6);;
 let rec nbocc (elt: 'a) (ens:'a multiensemble) : int =
   match ens with
   | V -> 0
-  | A ((e, nbr), ensprime) -> if (e = elt) then nbr else (nbocc elt ensprime)
+  | A ((e, nbr), ensprime) -> if (e = elt) then (nbocc elt ensprime) + nbr else (nbocc elt ensprime)
 ;;
 
 let _ = assert(nbocc 6 (A((3,2), A((4,1), A((6,3), V)))) = 3);;
@@ -88,12 +88,12 @@ let _ = assert(nbocc 6 (A((3,2), A((4,1), A((6,3), V)))) = 3);;
 let rec appartient (elt: 'a) (ens:'a multiensemble) : bool =
   match ens with
   | V -> false
-  | A ((e, nbr), ensprime) -> (e = elt) || (appartient elt ensprime)
+  | A ((e, nbr), ensprime) -> (e = elt) && (nbr != 0) || (appartient elt ensprime)
 ;;
 
 let _ = assert(appartient 6 (A((3,2), A((4,1), A((6,3), V)))) = true)
-and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false);;
-
+and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false)
+and _ = assert(appartient 6 (A((3,2), A((4,1), A((6,0), V)))) = false);;
 
 (**
   | SPECIFICATION | inclusion
@@ -114,7 +114,7 @@ and _ = assert(appartient 9 (A((3,2), A((4,1), A((6,3), V)))) = false);;
 let rec inclus (ens1:'a multiensemble) (ens2:'a multiensemble) : bool =
   match ens1 with
   | V -> true 
-  | A ((e, nbr), ensprime) -> (appartient e ens2) && ((nbocc e ens2) = nbr) && (inclus ensprime ens2)
+  | A ((e, nbr), ensprime) -> (appartient e ens2) && ((nbocc e ens2) >= nbr) && (inclus ensprime ens2)
 ;;
 
 let _ = assert(inclus (A((3,2), V)) (A((3,2), A((4,1), A((6,3), V)))) = true)
@@ -128,18 +128,24 @@ and _ = assert(inclus (A((9,1), V)) (A((3,2), A((4,1), A((6,3), V)))) = false);;
   | Examples:
   | 	ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2), A((4,1), A((6,3), V))))) 
   | REALISATION |
-  | Algorithme: Utilisation du conditionnelle If...Then...Else.
-  | Equations:
-  | 	(1) Si l'elt est dans ens, alors on renvoit ens, sinon on l'ajoute
+  | Algorithme: Utilisation de la recurance, du conditionnelle If...Then...Else et pattern matching.
   | Implémentation:
 **)
 
-let ajout (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
-	if (appartient (elt_of elt) ens) then ens else A(((elt_of elt),(occ_of elt)),ens)
+let rec ajout((n,m):'a multielement)(ens:'a multiensemble):'a multiensemble= 
+	if m == 0 then ens 
+  else
+    match ens with 
+    |V -> A((n,m),V) 
+    |A((x,nb),suite) -> 
+        if not(appartient n ens) then A((n,m),ens)     
+        else 
+        if x != n then A((x,nb),(ajout (n,m) suite)) 
+        else A((n,nb+m),suite);; 
 ;;
 
-let _ = assert(ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2), A((4,1), A((6,3), V))))));;
-
+let _ = assert(ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2), A((4,1), A((6,3), V))))))
+and _ = assert(ajout (3,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((3,4), A((4,1), A((6,3), V)))));;
 
 (**
   | SPECIFICATION | supprime
@@ -151,17 +157,18 @@ let _ = assert(ajout (1,2) (A((3,2), A((4,1), A((6,3), V)))) = (A((1,2),A((3,2),
   | REALISATION |
   | Algorithme: Utilisation du conditionnelle If...Then..Else, de la recurtion, et du pattern matching.
   | Equations:
-  | 	(1) Si l'elt est dans ens, alors on renvoit ens, sinon on l'ajoute
+
   | Implémentation:
 **)
 
-let rec supprime (elt: 'a multielement) (ens: 'a multiensemble) : 'a multiensemble =
-	match ens with
-	| V -> V
-	| A ((e, o), ens) -> if (e = (elt_of elt)) then A((e, o - (occ_of elt)), ens) else A ((e, o), (supprime elt ens))
-;;
+let rec supprime((x,n):'a multielement)(ens:'a multiensemble):'a multiensemble=
+  match ens with
+    |V -> V 
+    |A((el,nb),suite) -> if not(appartient x ens) then ens 
+    else if x != el then A((el,nb),(supprime (x,n) suite)) 
+    else if nb>n then A((x,nb-n),suite) else suite;;
 
-let _ = assert(supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((3,0), A((4,1), A((6,3), V))))
+let _ = assert(supprime (3,2) (A((3,2), A((4,1), A((6,3), V)))) = A((4,1), A((6,3), V)))
 and _ = assert(supprime (3,0) (A((3,2), A((4,1), A((6,3), V)))) = A((3,2), A((4,1), A((6,3), V))));;
 
 
@@ -197,11 +204,16 @@ and _ = assert(egaux (A((3,7), A((4,1), A((6,3), V)))) (A((3,2), A((4,1), A((6,3
   | Implémentation:
 **)
 
-let rec intersection (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
+let rec intersection(ens1:'a multiensemble)(ens2:'a multiensemble):'a multiensemble = 
   match ens1 with
-  | V -> V
-  | A ((e,occ), ens) -> if (appartient e ens2) then A((e,occ), intersection ens ens2) else intersection ens ens2
-;;
+    | V -> V 
+    | A((n1,m1),s1) -> 
+      match ens2 with
+        | V-> V 
+        | A((n2,m2),s2) -> 
+          if ((nbocc n1 ens2)>m1)
+          then (ajout (n1,m1) (intersection s1 ens2))  
+          else (ajout (n1,(nbocc n1 ens2)) (intersection s1 ens2));; 
 
 let _ = assert(intersection (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A((3,2), V)))) = A((2,2), A((3,2), V)));;
 
@@ -216,11 +228,15 @@ let _ = assert(intersection (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2),
   | Implémentation:
 **)
 
-let rec difference (ens1:'a multiensemble) (ens2:'a multiensemble) : 'a multiensemble =
-  match ens1 with
-  | V -> V
-  | A ((e,occ), ens) -> if (appartient e ens2) == false then A((e,occ), difference ens ens2) else difference ens ens2
-;;
+let rec difference(ens1:'a multiensemble)(ens2:'a multiensemble):'a multiensemble = 
+  if (ens1 == V) then ens1 
+  else
+    match ens2 with 
+      | V->ens1
+      | A((n,m),s)->
+        if ((nbocc n ens1)>m)
+        then (supprime (n,m) (difference ens1 s))
+        else (supprime (n,(nbocc n ens1)) (difference ens1 s));;
 
 let _ = assert(difference (A((1,2), A((2,2), A((3,2), V)))) (A((4,2), A((2,2), A((3,2), V)))) = A((1,2),V));;
 
@@ -303,11 +319,12 @@ and _ = assert(cardinalL [ (true,1) ; (false,2) ] = 3);;
 let rec nboccL (elt: 'a) (ens:'a multiensemble2) : int =
   match ens with
   | [] -> 0
-  | (valu,occ)::fin -> if (valu = elt) then occ else (nboccL elt fin)
+  | (valu,occ)::fin -> if (valu = elt) then (nboccL elt fin) + occ else (nboccL elt fin)
 ;;
 
 let _ = assert(nboccL 2 [(2,1); (3,2); (10,1)] = 1)
-and _ = assert(nboccL 4 [(2,1); (3,1); (4,0)] = 0);;
+and _ = assert(nboccL 4 [(2,1); (3,1); (4,0)] = 0)
+and _ = assert(nboccL 2 [(2,1); (2,2); (2,1)] = 4);;
 
 
 (**
@@ -338,11 +355,14 @@ and _ = assert(appartientL 4 [(2,1); (3,1); (4,0)] = false);;
   |   (b) inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false
  *)
 
-let rec inclusL (ens1:'a multiensemble2) (ens2:'a multiensemble2) : bool=
-  match ens1 with
-  | [] -> true (* eq. 1 *)
-  | (valu,occ)::fin -> (appartientL valu ens2) && (inclusL fin ens2)
-;;
+ let rec inclusL(ensemble1:'a multiensemble2)(ensemble2:'a multiensemble2):bool= 
+  if (cardinalL ensemble2) == 0 && (cardinalL ensemble1) == 0 then true
+  else if (cardinalL ensemble2) == 0 then false
+  else
+    match ensemble1 with
+    | [] -> true
+    | (n,m)::suite -> if (nboccL n ensemble2) >= m then (inclusL suite ensemble2)
+        else false;; 
 
 let _ = assert(inclusL [(1,2); (2,3); (3,3)] [(0,1); (1,2); (2,3); (3,3)] = true)
 and _ = assert(inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false);;
@@ -354,17 +374,19 @@ and _ = assert(inclusL [(0,1)] [(1,2); (2,3); (3,3)] = false);;
   | Sémantique: (ajouteL elt ens) est l'ensemble obtenu en ajoutant l'élément elt à l'ensemble ens en respectant la contrainte 
                 de non répétition des éléments.
   | Examples:
-  |   (a) ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)] 
-  |   (b) ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]
+  |   (a) ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(7,1); (0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]) 
+  |   (b) ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,2); (2,1); (3,1); (4,1); (5,1)]
 *)
 
-let ajouteL (elt:'a multielement) (ens: 'a multiensemble2): 'a multiensemble2 =
-  if (appartientL (elt_of elt) ens) then ens
-  else ens @ [(elt_of elt), (occ_of elt)]
-;;
+let rec ajouteL((n,m):'a multielement)(ens:'a multiensemble2):'a multiensemble2= 
+  if m == 0 then ens else
+    match ens with 
+    | [] -> (n,m)::[]
+    | (x,nb)::suite -> if not(appartientL n ens) then (n,m)::ens else 
+        if x != n then (x,nb)::(ajouteL (n,m) suite) else (n,nb+m)::suite;;
 
-let _ = assert(ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1); (7,1)])
-and _ = assert(ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)]);;
+let _ = assert(ajouteL (7,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] = [(7,1); (0,1); (1,1); (2,1); (3,1); (4,1); (5,1)])
+and _ = assert(ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1); (1,2); (2,1); (3,1); (4,1); (5,1)]);;
 
 
 (**
@@ -372,19 +394,19 @@ and _ = assert(ajouteL (1,1) [(0,1); (1,1); (2,1); (3,1); (4,1); (5,1)] =  [(0,1
   | Profil: 'a multiensemble -> 'a multiensemble -> 'a multiensemble
   | Sémantique: (supprimeL elt ens) supprime l'élément elt de l'ensemble ens.
   | Examples:
-  |   (a) supprimeL (3,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,2)]
-  |   (c) supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]
+  |   (a) supprimeL ('a',1) [('a',1); ('b',1)] = [('b',1)])
+  |   (c) supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)])
 *)
 
-let rec supprimeL (elt:'a multielement) (ens: 'a multiensemble2): 'a multiensemble2 =
+let rec supprimeL((x,n):'a multielement)(ens:'a multiensemble2):'a multiensemble2=
   match ens with
-  | [] -> []
-  | (valu, occ)::fin ->
-      if (valu = (elt_of elt)) then (valu,occ - occ_of elt)::fin
-      else (valu,occ)::(supprimeL elt fin)
+    | [] -> []
+    | (el,nb)::suite -> if not(appartientL x ens) then ens 
+        else if x != el then (el,nb)::(supprimeL (x,n) suite)
+        else if nb>n then (x,nb-n)::suite else suite
 ;;
 
-let _ = assert(supprimeL ('a',1) [('a',1); ('b',1)] = [('a',0);('b',1)])
+let _ = assert(supprimeL ('a',1) [('a',1); ('b',1)] = [('b',1)])
 and _ = assert(supprimeL (2,1) [(1,1); (2,2); (3,1)] = [(1,1); (2,1); (3,1)]);;
 
 
@@ -415,13 +437,16 @@ and _ = assert(egauxL [(2,2); (3,1)] [(2,2); (3,1); (4,1)] = false);;
   |   (c) intersectionL [(1,1); (2,1)] [(2,1); (1,1)] = [(1,1); (2,1)]
 **)
 
-let rec intersectionL (ens1:'a multiensemble2) (ens2:'a multiensemble2) : 'a multiensemble2 =
+let rec intersectionL(ens1:'a multiensemble2)(ens2:'a multiensemble2):'a multiensemble2 = 
   match ens1 with
-  | [] -> [] 
-  | (valu,occ)::fin ->
-      if (appartientL valu ens2) then (valu,occ)::(intersectionL fin ens2)
-      else intersectionL fin ens2
-;;
+  | [] -> []
+  | (n1,m1)::s1 -> match ens2 with
+                    | [] -> []
+                    | (n2,m2)::s2 -> 
+                      if ((nboccL n1 ens2)>m1) 
+                      then (ajouteL (n1,m1) (intersectionL s1 ens2))
+                      else (ajouteL (n1,(nboccL n1 ens2)) (intersectionL s1 ens2)) 
+                      ;; 
 
 let _ = assert(intersectionL [(1,1); (2,1); (3,1)] [(2,1); (3,1); (4,1)] = [(2,1); (3,1)])
 and _ = assert(intersectionL [(1,1); (2,1)] [(2,1); (1,1)] = [(1,1); (2,1)]);;
@@ -441,7 +466,7 @@ let rec differenceL (ens1:'a multiensemble2) (ens2:'a multiensemble2) : 'a multi
   | (valu,occ)::fin -> differenceL (supprimeL (valu,occ) ens1) fin
 ;;
 
-let _ = assert(differenceL [(2,1); (1,1)] [(1,1)] = [(2,1); (1,0)])
+let _ = assert(differenceL [(2,1); (1,1)] [(1,1)] = [(2,1)])
 
 
 (**
@@ -833,3 +858,13 @@ let points_suite (c:combinaison):int=
 let points_groupe (c:combinaison):int=
   if (est_groupe c == true) then points c else 0
     ;;
+
+
+(**
+  | SPECIFICATION | tabVmens
+  | Profil: table -> pioche (multiensemble2 tuile)
+  | Sémantique: (tabVmens t) renvoi le multiensemble des tuiles présent sur la table.
+**)
+
+
+ 
